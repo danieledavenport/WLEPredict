@@ -5,18 +5,177 @@ date: "November 23, 2014"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r init, cache=TRUE, echo=FALSE}
+#Initialization
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+#Set the working directory
+setwd("/Users/ddavenport/Documents/DataScienceSpecialization/PracticalMachineLearning/CourseProject/WLEPredict")
 
-```{r}
-summary(cars)
+#Load the libraries
+library(grid)
+library(ggplot2)
+library(gridExtra)
+library(caret)
+library(kimisc)
+library(Hmisc)
+library(AppliedPredictiveModeling)
+library(knitr)
+library(markdown)
+library(scales)
 ```
 
-You can also embed plots, for example:
+### Synopsis
 
-```{r, echo=FALSE}
-plot(cars)
+A random forest model was built to predict the classe of a weight lifting exercise based on the data produced by sensors on the arm, forearm, belt, and dumbbell of six particpants. An accuracy of 0.9945 was obtained using a random forest model with 52 predictors although the model took a long time to build on the full data set.  
+
+### Approach
+
+Data for the Weight Lifting Exercise was obtained at the url: http://groupware.les.inf.puc-rio.br/har#weight_lifting_exercises from: Ugulino, W.; Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H. Wearable Computing: Accelerometers' Data Classification of Body Postures and Movements. Proceedings of 21st Brazilian Symposium on Artificial Intelligence. Advances in Artificial Intelligence - SBIA 2012. In: Lecture Notes in Computer Science. , pp. 52-61. Curitiba, PR: Springer Berlin / Heidelberg, 2012. ISBN 978-3-642-34458-9. DOI: 10.1007/978-3-642-34459-6_6.  
+
+This data was obtained from four sensors located on the arm, forearm, belt, and dumbbell of six participants asked to complete a weight lifting exercise in five different ways: the correct manner as well as four commonly incorrect ways.  
+
+The first step was to define the question to be answered:  Given sensor data for the arm, forearm, belt, and dumbbell, can we correctly predict the classe, i.e. classe A correct; classe B: throwing elbows to front; classe C: lifting dumbbell halfway; classe D: lowering the dumbbell only halfway; classe E: throwing hips to the front?  
+
+The training data and test data were loaded:   
+
+```{r load, cache=TRUE, echo=TRUE}
+alltrain<-read.csv("pml-training.csv")
+alltest<-read.csv("pml-testing.csv")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+As loaded, the training data set is composed of 19,622 rows and 160 columns.  The second step was to narrow down the potential predictors (features).  Performing summary(alltrain) indicated that a large number of columns had a high percentage of missing values (typically 19,216 NAs).  Columns with data missing for 97.9% of rows would clearly not be useful in prediction.  A vector of columns with no missing values was created and used to extract just the potentially useful columns. 
+
+```{r discardNA, echo=TRUE}
+keepcols<-c("X","user_name","raw_timestamp_part_1","raw_timestamp_part_2","cvtd_timestamp","new_window","num_window","roll_belt","pitch_belt","yaw_belt","total_accel_belt","kurtosis_roll_belt","kurtosis_picth_belt","kurtosis_yaw_belt","skewness_roll_belt","skewness_roll_belt.1","skewness_yaw_belt","amplitude_yaw_belt","gyros_belt_x","gyros_belt_y","gyros_belt_z","accel_belt_x","accel_belt_y","accel_belt_z","magnet_belt_x","magnet_belt_y","magnet_belt_z","roll_arm","pitch_arm","yaw_arm","total_accel_arm","gyros_arm_x","gyros_arm_y","gyros_arm_z","accel_arm_x","accel_arm_y","accel_arm_z","magnet_arm_x","magnet_arm_y","magnet_arm_z","kurtosis_roll_arm","kurtosis_picth_arm","kurtosis_yaw_arm","skewness_roll_arm","skewness_pitch_arm","skewness_yaw_arm","roll_dumbbell","pitch_dumbbell","yaw_dumbbell","kurtosis_roll_dumbbell","kurtosis_picth_dumbbell","kurtosis_yaw_dumbbell","skewness_roll_dumbbell","skewness_pitch_dumbbell","skewness_yaw_dumbbell","max_yaw_dumbbell","min_yaw_dumbbell","amplitude_yaw_dumbbell","total_accel_dumbbell","gyros_dumbbell_x","gyros_dumbbell_y","gyros_dumbbell_z","accel_dumbbell_x","accel_dumbbell_y","accel_dumbbell_z","magnet_dumbbell_x","magnet_dumbbell_y","magnet_dumbbell_z","roll_forearm","pitch_forearm","yaw_forearm","kurtosis_roll_forearm","kurtosis_picth_forearm","kurtosis_yaw_forearm","skewness_roll_forearm","skewness_pitch_forearm","skewness_yaw_forearm","max_yaw_forearm","min_yaw_forearm","amplitude_yaw_forearm","total_accel_forearm","gyros_forearm_x","gyros_forearm_y","gyros_forearm_z","accel_forearm_x","accel_forearm_y","accel_forearm_z","magnet_forearm_x","magnet_forearm_y","magnet_forearm_z","classe")
+df<-alltrain[,keepcols]
+```
+Next, the function nearZeroVar() was applied to identify columns with little variance which could be expected to contribute little to prediction.  The result was used to create a vector to eliminate those columns.  
+
+```{r discardNZV, cache=TRUE, echo=TRUE}
+nearZeroVar(df)
+zvCols<-c(6,12,13,14,15,16,17,18,41,42,43,44,45,46,50,51,52,53,54,55,56,57,58,72,73,74,75,76,77,78,79,80)
+dftrain<-df[,-zvCols]
+```
+
+Rather than operate on the entire data set, cross validation was performed using a subset of the data.  A random subset of 500 rows was created with data from each of the different values of the outcome variable classe and then the result was randomized.  At that point the small subset of training data was partitioned into a training set and a test set in order to perform cross validation.
+
+```{r smallset, cache=TRUE, echo=TRUE}
+set.seed(32323)
+#Get 500 random rows of each classe
+A<-dftrain[dftrain$classe=="A",]
+B<-dftrain[dftrain$classe=="B",]
+C<-dftrain[dftrain$classe=="C",]
+D<-dftrain[dftrain$classe=="D",]
+E<-dftrain[dftrain$classe=="E",]
+smallset<-sample.rows(A,500,replace=FALSE)
+smallset<-rbind(smallset,sample.rows(B,500,replace=FALSE))
+smallset<-rbind(smallset,sample.rows(C,500,replace=FALSE))
+smallset<-rbind(smallset,sample.rows(D,500,replace=FALSE))
+smallset<-rbind(smallset,sample.rows(E,500,replace=FALSE))
+#Randomize the subset
+smallset<-sample.rows(smallset,2500,replace=FALSE)
+smallsetall<-smallset
+smallset<-smallset[,6:59]
+#Partition the subset into training and test data
+inTrain <-createDataPartition(y=smallset$classe, p=0.75, list=FALSE)
+training<-smallset[inTrain,]
+testing<-smallset[-inTrain,]
+```
+
+A model was then built using a decision tree because of its relatively quick performance and interpretability.  
+
+```{r modelTree, cache=TRUE, echo=TRUE}
+modFitSmall<-train(classe ~., data=training, method="rpart")
+```
+
+Initially, the model resulted in extremely high accuracy.  However, using the function varImp(modFit) indicated that prediction was based almost entirely on the column "X" which essentially made predictions based on the index order of a dataset ordered by classe.  That column was eliminated.  Additional models were built using various combinations including and excluding the first six columns.  The highest accuracy was obtained when the first six columns were excluded (0.4753080).  At this point, the method was changed from decision tree ("rpart") to random forest ("rf").  
+
+```{r modelRandomForestSmall, cache=TRUE, echo=TRUE}
+modFitSmall<-train(classe ~., data=training, method="rf", prox=TRUE)
+```
+
+With the random forest model, the accuracy on the subset improved dramatically to 0.9188283.  At that point, the model was applied to make predictions against the test partition of the subset of data.  As expected, the accuracy was reduced but was still quite good: .9552.  Thus based on the application of the final model to the subset of data, the estimated expected Out of Sample Error would be 1-.9552 = .0448 or 4.48%.  Following is the Confusion Matrix for the prediction against the test set extracted from the subset of the data:  
+
+```{r ConfusionMatrix, cache=TRUE, echo=TRUE}
+predictionsSmall<-predict(modFitSmall,newdata=testing)
+confusionMatrix(predictionsSmall,testing$classe)
+```
+  
+At this point, a random forest model was built against the full data set.  Because the model took so long to build, the code to build the full model is commented out and the results of applying the model to the full test set are copied in rather than recomputed.  
+
+```{r modelRandomForestFull, echo=TRUE}
+#Partition the data:
+#inTrain <-createDataPartition(y=alltrain$classe, p=0.75, list=FALSE)
+#training<-alltrain[inTrain,]
+#testing<-alltrain[-inTrain,]
+
+#Create the model:
+#modFit<-train(classe ~., data=training, method="rf", prox=TRUE)
+#predictions<-predict(modFit,newdata=testing)
+#confusionMatrix(predictions,testing$classe)
+```
+
+Confusion Matrix and Statistics  
+  
+          Reference  
+Prediction    A    B    C    D    E  
+         A 1395    5    0    0    0  
+         B    0  941    1    0    0  
+         C    0    3  852   15    0  
+         D    0    0    2  789    1  
+         E    0    0    0    0  900  
+  
+Overall Statistics  
+                                           
+               Accuracy : 0.9945           
+                 95% CI : (0.992, 0.9964)  
+    No Information Rate : 0.2845           
+    P-Value [Acc > NIR] : < 2.2e-16        
+                                         
+                  Kappa : 0.993            
+ Mcnemar's Test P-Value : NA               
+
+Statistics by Class:  
+  
+                     Class: A Class: B Class: C Class: D Class: E  
+Sensitivity            1.0000   0.9916   0.9965   0.9813   0.9989  
+Specificity            0.9986   0.9997   0.9956   0.9993   1.0000  
+Pos Pred Value         0.9964   0.9989   0.9793   0.9962   1.0000  
+Neg Pred Value         1.0000   0.9980   0.9993   0.9964   0.9998  
+Prevalence             0.2845   0.1935   0.1743   0.1639   0.1837  
+Detection Rate         0.2845   0.1919   0.1737   0.1609   0.1835  
+Detection Prevalence   0.2855   0.1921   0.1774   0.1615   0.1835  
+Balanced Accuracy      0.9993   0.9957   0.9960   0.9903   0.9994  
+
+### Conclusion and Next Steps  
+  
+A Random Forests method produced a model with an excellent accuracy rate.  Using a subset of the data to perform cross validation permitted testing the inclusion/exclusion of potential predictors.  The estimated Out of Sample Error based on the subset (4.48%) was higher than the Out of Sample Error of the full data set: 1-.9945 = .0055 or .55%.  However, using 52 predictors no doubt contributed to the significant amount of time required to build the model.  Running varImp(modFit) against the final model produced the following list of the 20 most important variables:  
+  
+varImp(modFit)  
+rf variable importance  
+  
+  only 20 most important variables shown (out of 52)  
+  
+                  Overall  
+roll_belt          100.00  
+yaw_belt            80.98  
+magnet_dumbbell_z   68.02  
+magnet_dumbbell_y   65.18  
+pitch_belt          62.01  
+pitch_forearm       58.72  
+magnet_dumbbell_x   52.60  
+roll_forearm        51.95  
+magnet_belt_z       45.24  
+accel_dumbbell_y    45.10  
+magnet_belt_y       44.23  
+accel_belt_z        43.33  
+roll_dumbbell       42.35  
+accel_dumbbell_z    39.53  
+roll_arm            36.32  
+accel_forearm_x     33.70  
+gyros_belt_z        30.72  
+magnet_arm_y        29.69  
+accel_dumbbell_x    28.90  
+yaw_dumbbell        28.69  
+
+The next step would be limit the training and test sets to these twenty variables to determine if the speed could be improved without significantly impacting the accuracy.  
