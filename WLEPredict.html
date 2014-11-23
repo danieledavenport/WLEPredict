@@ -104,7 +104,7 @@ testing&lt;-smallset[-inTrain,]</code></pre>
 <p>A model was then built using a decision tree because of its relatively quick performance and interpretability.</p>
 <pre class="r"><code>modFitSmall&lt;-train(classe ~., data=training, method=&quot;rpart&quot;)</code></pre>
 <pre><code>## Loading required package: rpart</code></pre>
-<p>Initially, the model resulted in extremely high accuracy. However, using the function varImp(modFit) indicated that prediction was based almost entirely on the column “X” which essentially made predictions based on the index order of a dataset ordered by classe. That column was eliminated. Additional models were built using various combinations including and excluding the first six columns. The highest accuracy was obtained when the first six columns were excluded (0.4753080). At this point, the method was changed from decision tree (“rpart”) to random forest (“rf”).</p>
+<p>Initially, the model resulted in extremely high accuracy. However, using the function varImp(modFitSmall) indicated that prediction was based almost entirely on the column “X” which essentially made predictions based on the index order of a dataset ordered by classe. That column was eliminated. Additional models were built using various combinations including and excluding the first six columns. The highest accuracy was obtained when the first six columns were excluded (0.4753080). At this point, the method was changed from decision tree (“rpart”) to random forest (“rf”).</p>
 <pre class="r"><code>modFitSmall&lt;-train(classe ~., data=training, method=&quot;rf&quot;, prox=TRUE)</code></pre>
 <pre><code>## Loading required package: randomForest
 ## randomForest 4.6-10
@@ -115,7 +115,7 @@ testing&lt;-smallset[-inTrain,]</code></pre>
 ## The following object is masked from 'package:Hmisc':
 ## 
 ##     combine</code></pre>
-<p>With the random forest model, the accuracy on the subset improved dramatically to 0.9188283. At that point, the model was applied to make predictions against the test partition of the subset of data. As expected, the accuracy was reduced but was still quite good: .9552. Thus based on the application of the final model to the subset of data, the estimated expected Out of Sample Error would be 1-.9552 = .0448 or 4.48%. Following is the Confusion Matrix for the prediction against the test set extracted from the subset of the data:</p>
+<p>With the random forest model, the accuracy on the subset improved dramatically to 0.9188283. At that point, the model was applied to make predictions against the test partition of the subset of data. Surprisingly, the accuracy against the test partition was even better: .9552. Thus based on the application of the final model to the subset of data, the estimated expected Out of Sample Error would be 1-.9552 = .0448 or 4.48%. Following is the Confusion Matrix for the prediction against the test set extracted from the subset of the data:</p>
 <pre class="r"><code>predictionsSmall&lt;-predict(modFitSmall,newdata=testing)
 confusionMatrix(predictionsSmall,testing$classe)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
@@ -181,7 +181,7 @@ P-Value [Acc &gt; NIR] : &lt; 2.2e-16
 <p>only 20 most important variables shown (out of 52)</p>
 <pre><code>              Overall  </code></pre>
 <p>roll_belt 100.00<br />yaw_belt 80.98<br />magnet_dumbbell_z 68.02<br />magnet_dumbbell_y 65.18<br />pitch_belt 62.01<br />pitch_forearm 58.72<br />magnet_dumbbell_x 52.60<br />roll_forearm 51.95<br />magnet_belt_z 45.24<br />accel_dumbbell_y 45.10<br />magnet_belt_y 44.23<br />accel_belt_z 43.33<br />roll_dumbbell 42.35<br />accel_dumbbell_z 39.53<br />roll_arm 36.32<br />accel_forearm_x 33.70<br />gyros_belt_z 30.72<br />magnet_arm_y 29.69<br />accel_dumbbell_x 28.90<br />yaw_dumbbell 28.69</p>
-<p>The next step would be limit the training and test sets to these twenty variables to determine if the speed could be improved without significantly impacting the accuracy.</p>
+<p>The next step would be to limit the training and test sets to these twenty variables to determine if the speed could be improved without significantly impacting the accuracy.</p>
 </div>
 
 
