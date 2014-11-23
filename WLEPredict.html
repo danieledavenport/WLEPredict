@@ -118,38 +118,20 @@ testing&lt;-smallset[-inTrain,]</code></pre>
 <p>With the random forest model, the accuracy on the subset improved dramatically to 0.9188283. At that point, the model was applied to make predictions against the test partition of the subset of data. Surprisingly, the accuracy against the test partition was even better: .9552. Thus based on the application of the final model to the subset of data, the estimated expected Out of Sample Error would be 1-.9552 = .0448 or 4.48%.</p>
 <pre class="r"><code>predictionsSmall&lt;-predict(modFitSmall,newdata=testing)</code></pre>
 <p>Following is the Confusion Matrix for the prediction against the test set extracted from the subset of the data:</p>
-<pre class="r"><code>confusionMatrix(predictionsSmall,testing$classe)</code></pre>
-<pre><code>## Confusion Matrix and Statistics
-## 
-##           Reference
-## Prediction   A   B   C   D   E
-##          A 125   5   0   0   0
-##          B   0 118   5   1   0
-##          C   0   2 118   4   2
-##          D   0   0   2 119   2
-##          E   0   0   0   1 121
-## 
-## Overall Statistics
-##                                         
-##                Accuracy : 0.962         
-##                  95% CI : (0.943, 0.975)
-##     No Information Rate : 0.2           
-##     P-Value [Acc &gt; NIR] : &lt;2e-16        
-##                                         
-##                   Kappa : 0.952         
-##  Mcnemar's Test P-Value : NA            
-## 
-## Statistics by Class:
-## 
-##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity             1.000    0.944    0.944    0.952    0.968
-## Specificity             0.990    0.988    0.984    0.992    0.998
-## Pos Pred Value          0.962    0.952    0.937    0.967    0.992
-## Neg Pred Value          1.000    0.986    0.986    0.988    0.992
-## Prevalence              0.200    0.200    0.200    0.200    0.200
-## Detection Rate          0.200    0.189    0.189    0.190    0.194
-## Detection Prevalence    0.208    0.198    0.202    0.197    0.195
-## Balanced Accuracy       0.995    0.966    0.964    0.972    0.983</code></pre>
+<p>Confusion Matrix and Statistics</p>
+<pre><code>      Reference  </code></pre>
+<p>Prediction A B C D E<br /> A 125 5 0 0 0<br /> B 0 118 5 1 0<br /> C 0 2 118 4 2<br /> D 0 0 2 119 2<br /> E 0 0 0 1 121</p>
+<p>Overall Statistics</p>
+<pre><code>            Accuracy : 0.962           
+              95% CI : (0.943, 0.975)  
+ No Information Rate : 0.2             
+ P-Value [Acc &gt; NIR] : &lt;2e-16          
+                                       
+               Kappa : 0.952           </code></pre>
+<p>Mcnemar’s Test P-Value : NA</p>
+<p>Statistics by Class:</p>
+<pre><code>                  Class: A Class: B Class: C Class: D Class: E  </code></pre>
+<p>Sensitivity 1.000 0.944 0.944 0.952 0.968<br /> Specificity 0.990 0.988 0.984 0.992 0.998<br /> Pos Pred Value 0.962 0.952 0.937 0.967 0.992<br /> Neg Pred Value 1.000 0.986 0.986 0.988 0.992 Prevalence 0.200 0.200 0.200 0.200 0.200<br /> Detection Rate 0.200 0.189 0.189 0.190 0.194<br /> Detection Prevalence 0.208 0.198 0.202 0.197 0.195<br /> Balanced Accuracy 0.995 0.966 0.964 0.972 0.983</p>
 <p>At this point, a random forest model was built against the full data set. Because the model took so long to build, the code to build the full model is commented out and the results of applying the model to the full test set are copied in rather than recomputed.</p>
 <pre class="r"><code>#Partition the data:
 #inTrain &lt;-createDataPartition(y=alltrain$classe, p=0.75, list=FALSE)

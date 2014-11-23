@@ -102,10 +102,38 @@ predictionsSmall<-predict(modFitSmall,newdata=testing)
 
 Following is the Confusion Matrix for the prediction against the test set extracted from the subset of the data:  
 
-```{r confusionMatrix, cache=FALSE, echo=TRUE}
-confusionMatrix(predictionsSmall,testing$classe)
-```
+Confusion Matrix and Statistics  
+   
+          Reference  
+Prediction   A   B   C   D   E  
+          A 125   5   0   0   0  
+          B   0 118   5   1   0  
+          C   0   2 118   4   2  
+          D   0   0   2 119   2  
+          E   0   0   0   1 121  
   
+Overall Statistics  
+                                         
+                Accuracy : 0.962           
+                  95% CI : (0.943, 0.975)  
+     No Information Rate : 0.2             
+     P-Value [Acc > NIR] : <2e-16          
+                                           
+                   Kappa : 0.952           
+  Mcnemar's Test P-Value : NA              
+   
+ Statistics by Class:  
+   
+                      Class: A Class: B Class: C Class: D Class: E  
+ Sensitivity             1.000    0.944    0.944    0.952    0.968  
+ Specificity             0.990    0.988    0.984    0.992    0.998  
+ Pos Pred Value          0.962    0.952    0.937    0.967    0.992  
+ Neg Pred Value          1.000    0.986    0.986    0.988    0.992 
+ Prevalence              0.200    0.200    0.200    0.200    0.200  
+ Detection Rate          0.200    0.189    0.189    0.190    0.194  
+ Detection Prevalence    0.208    0.198    0.202    0.197    0.195  
+ Balanced Accuracy       0.995    0.966    0.964    0.972    0.983  
+    
 At this point, a random forest model was built against the full data set.  Because the model took so long to build, the code to build the full model is commented out and the results of applying the model to the full test set are copied in rather than recomputed.  
 
 ```{r modelRandomForestFull, echo=TRUE}
