@@ -115,9 +115,10 @@ testing&lt;-smallset[-inTrain,]</code></pre>
 ## The following object is masked from 'package:Hmisc':
 ## 
 ##     combine</code></pre>
-<p>With the random forest model, the accuracy on the subset improved dramatically to 0.9188283. At that point, the model was applied to make predictions against the test partition of the subset of data. Surprisingly, the accuracy against the test partition was even better: .9552. Thus based on the application of the final model to the subset of data, the estimated expected Out of Sample Error would be 1-.9552 = .0448 or 4.48%. Following is the Confusion Matrix for the prediction against the test set extracted from the subset of the data:</p>
-<pre class="r"><code>predictionsSmall&lt;-predict(modFitSmall,newdata=testing)
-confusionMatrix(predictionsSmall,testing$classe)</code></pre>
+<p>With the random forest model, the accuracy on the subset improved dramatically to 0.9188283. At that point, the model was applied to make predictions against the test partition of the subset of data. Surprisingly, the accuracy against the test partition was even better: .9552. Thus based on the application of the final model to the subset of data, the estimated expected Out of Sample Error would be 1-.9552 = .0448 or 4.48%.</p>
+<pre class="r"><code>predictionsSmall&lt;-predict(modFitSmall,newdata=testing)</code></pre>
+<p>Following is the Confusion Matrix for the prediction against the test set extracted from the subset of the data:</p>
+<pre class="r"><code>confusionMatrix(predictionsSmall,testing$classe)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
